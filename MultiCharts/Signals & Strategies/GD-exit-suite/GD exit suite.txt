@@ -1,0 +1,138 @@
+[Intrabarordergeneration=true]
+
+{
+		Type - Signal
+		Name - GD exit suite
+		Desc - This Signal has selectable multiple exits
+		Adapted from Neil Wrightson(BigMikeTrading forum) and M Tompkins (GitHub)
+}
+
+{Required inputs for exit}
+
+Input: 	
+		UseStrategyName(False),
+		StrategyName("Change to map strat"),		// Change name to match strat in use
+		PositionBasis( false ) ,					// true - shares, false - contracts ***check this
+		
+		PctTrailing("-- Pct Trailing --"), 			// Label
+		Enable_Pct_Trail(1), 						// 0 - Disabled | 1 - Enabled
+		Init_percent_trail$1( 100 ), 				// Figure to begin percent profit capture trail
+		TrailingPct1( 73 ), 						// 1st level percentage drop to close profitable position and retain profit, e.g. 20 closes after max position profit drops by 20%                             
+		//pct_Trail_min (45),						// Figure of maxposition profit when to kick off trailing percentage stop, i.e. $62.50
+		Init_percent_trail$2( 225.00),				// 2nd level to change pct trail to lower figure
+		TrailingPct2 ( 20 ),						// keep much more of run up
+			 
+		
+		Dollar_Trailing("-- Dollar trailing --"), 	// Label
+		Enable_Dollar_Trail(1),						// 0 - Disabled | 1 - Enabled
+		Init_dollar_trail1 (187.50),				// Dollar amount to begin trail stop
+		Dollar_trail_amt1 (150.00),					// Dollars to trail behind profit	
+		Init_dollar_trail2 (275.00),				// Dollar amount to begin trail stop
+		Dollar_trail_amt2 (162.50);					// Dollars to trail behind profit	
+		
+
+
+Vars: 		Double TickSize (0);
+
+		
+		TickSize = minmove/pricescale;
+		
+		
+
+		
+		
+		
+		
+		if PositionBasis then
+			SetStopPosition
+		else
+			SetStopShare ;
+		
+		// Check for integer input
+		If TrailingPct1 <> IntPortion(TrailingPct1) Then begin
+				Alert;
+				Abort;
+				end;	
+		
+				
+
+
+
+		{*************************************************}
+		{ P E R C E N T T R A I L I N G }
+		{*************************************************}
+
+		if Enable_Pct_Trail = 1 and (MarketPosition = 1 or marketposition = -1) and (Init_percent_trail$1 > 0 and TrailingPct1 > 0 or 
+		Init_percent_trail$2 > 0 and TrailingPct2 > 0)
+			
+		
+		// percent trailing treatment levels, above and below 140	
+		then begin
+		
+		//var: 	IPC_condition1 (false),
+		// 	IPC_condition2 (false);
+		
+		//if marketposition = 0 then IPC_condition1 = false;
+		//if marketposition = 0 then IPC_condition2 = false;
+		
+		//if maxpositionprofit >= Init_percent_trail$1 and maxpositionprofit < Init_percent_trail$2 then IPC_condition1 = True;	
+		//if IPC_condition1  then begin	
+		
+		if maxpositionprofit >= Init_percent_trail$1 and maxpositionprofit < Init_percent_trail$2 	
+		 then begin
+
+			//setstopcontract;
+			SetPercentTrailing	( Init_percent_trail$1, TrailingPct1 ) ; //e.g. once max pos profit hits 112.50 but lower than MPP 150 then trail stop at 50%
+			
+			end;		
+		
+		
+		//if maxpositionprofit >= Init_percent_trail$2 then IPC_condition2 = True;
+		//if IPC_condition2 then begin	
+		
+		if maxpositionprofit >= Init_percent_trail$2 
+		then begin	
+
+			//setstopcontract;
+			SetPercentTrailing	( Init_percent_trail$2, TrailingPct2 ) ; //e.g if max pos profit is over MPP 150 then trail stop at 20% drop in profit
+			
+				
+			end;
+			
+		
+			
+			
+		end;	
+		
+		
+		
+		{*************************************************}
+		{ DOLLAR TRAILING }
+		{*************************************************}
+
+			
+		if (marketposition = 1 or marketposition = -1) and Init_dollar_trail1 > 0 and Enable_Dollar_Trail = 1 then begin
+				
+		{vars:	dollar_trailing_condition1 (false),		
+			dollar_trailing_condition2 (false);
+			
+			if marketposition = 0 then dollar_trailing_condition1 = false;
+			if marketposition = 0 then dollar_trailing_condition1 = false;	
+				
+			if maxpositionprofit >= Init_dollar_trail1 then dollar_trailing_condition1 = True;}
+			if maxpositionprofit >= Init_dollar_trail1 then begin
+								
+				//if dollar_trailing_condition1 then begin
+				
+				SetDollarTrailing( Dollar_trail_amt1 ) ; // if max pos profit > init dollar trail 1 - 75, then trail stop at $50
+				
+				end;
+				
+			//if maxpositionprofit >=  Init_dollar_trail2 then dollar_trailing_condition2 = True;
+			if maxpositionprofit >=  Init_dollar_trail2 then
+								
+				//if dollar_trailing_condition2 then begin
+				
+				SetDollarTrailing( Dollar_trail_amt2 ) ; // if max pos profit > init dollar trail 2 - 187.50, then trail stop at $125
+				
+				end;
