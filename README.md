@@ -38,4 +38,3 @@ git submodule update --remote --merge
 ```
 
 Revision: 5780.25390
-[Project Status Image]: https://img.shields.io/badge/project-active-green.svg "Project Status: Active"
